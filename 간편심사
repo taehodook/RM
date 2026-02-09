@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>간편 RM심사 점수표 시뮬레이터</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 10px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 15px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 22px;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        .header p {
+            font-size: 13px;
+            opacity: 0.9;
+            line-height: 1.4;
+        }
+
+        .content {
+            padding: 20px 15px;
+        }
+
+        /* URL 자동 분석 섹션 */
+        .auto-analysis-section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            border-radius: 12px;
+            border: 2px solid #667eea;
+        }
+
+        .auto-analysis-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .auto-analysis-title::before {
+            content: "🤖";
+            font-size: 24px;
+        }
+
+        .url-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .url-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px 15px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .url-input:focus {
+            outline: none;
+            border-color: #764ba2;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        .analyze-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .analyze-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .analysis-status {
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .analysis-status.loading {
+            background: #fff3cd;
+            color: #856404;
+            display: block;
+        }
+
+        .analysis-status.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        .analysis-status.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+
+        .analysis-info {
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .analysis-info.show {
+            display: block;
+        }
+
+        .analysis-info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+
+        .analysis-info-item:last-child {
+            border-bottom: none;
+        }
+
+        .analysis-info-label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .analysis-info-value {
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .category {
+            margin-bottom: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .category:hover {
+            border-color: #667eea;
+            box-shadow: 0 3px 10px rgba(102, 126, 234, 0.2);
+        }
+
+        .category-header {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .category-title {
+            font-size: 15px;
+            font-weight: bold;
+            color: #333;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .weight-badge {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .category-body {
+            padding: 15px;
+        }
+
+        .range-options {
+            display: grid;
+            gap: 10px;
+        }
+
+        .range-option {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 50px;
+        }
+
+        .range-option:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .range-option.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .range-option input[type="radio"] {
+            margin-right: 12px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .range-text {
+            flex: 1;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .range-score {
+            font-weight: bold;
+            font-size: 14px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .range-option.selected .range-score {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .results-section {
+            margin-top: 25px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+            border-radius: 12px;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #d0d0d0;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-label {
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .result-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .total-score {
+            font-size: 28px !important;
+            color: #764ba2 !important;
+        }
+
+        .collateral-section {
+            margin-top: 25px;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            border: 2px solid #667eea;
+        }
+
+        .collateral-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .collateral-input {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .input-group {
+            width: 100%;
+        }
+
+        .input-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .collateral-result {
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .collateral-result-label {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .collateral-result-value {
+            font-size: 24px;
+            font-weight: bold;
+            word-break: break-all;
+        }
+
+        .collateral-table-wrapper {
+            overflow-x: auto;
+            margin-top: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .collateral-table {
+            border-collapse: collapse;
+            width: 100%;
+            min-width: 300px;
+        }
+
+        .collateral-table th,
+        .collateral-table td {
+            padding: 10px 8px;
+            text-align: center;
+            border: 1px solid #e0e0e0;
+            font-size: 13px;
+        }
+
+        .collateral-table th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+
+        .collateral-table tr:nth-child(even) {
+            background: #f8f9ff;
+        }
+
+        .collateral-table tr.active {
+            background: #ffe0b2;
+            font-weight: bold;
+        }
+
+        .reset-btn {
+            margin-top: 15px;
+            padding: 14px 20px;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            width: 100%;
+        }
+
+        .reset-btn:hover {
+            background: #ee5a52;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .manual-mode,
+        .auto-mode {
+            display: none;
+        }
+
+        .manual-mode.active,
+        .auto-mode.active {
+            display: block;
+        }
+
+        /* 로딩 애니메이션 */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 태블릿 */
+        @media (min-width: 768px) {
+            .content {
+                padding: 30px 25px;
+            }
+
+            .header h1 {
+                font-size: 26px;
+            }
+
+            .header p {
+                font-size: 14px;
+            }
+
+            .category-title {
+                font-size: 16px;
+            }
+
+            .range-text {
+                font-size: 15px;
+            }
+
+            .collateral-input {
+                flex-direction: row;
+            }
+
+            .url-input-group {
+                flex-wrap: nowrap;
+            }
+        }
+
+        /* 데스크톱 */
+        @media (min-width: 1024px) {
+            body {
+                padding: 20px;
+            }
+
+            .content {
+                padding: 40px;
+            }
+
+            .header {
+                padding: 30px;
+            }
+
+            .header h1 {
+                font-size: 28px;
+            }
+
+            .category-title {
+                font-size: 18px;
+            }
+
+            .range-text {
+                font-size: 15px;
+            }
+
+            .collateral-result-value {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>간편 RM심사 점수표 시뮬레이터</h1>
+            <p>URL 자동 분석 또는 수동 입력으로 심사 점수를 계산하세요</p>
+        </div>
+
+        <div class="content">
+            <!-- 모드 전환 버튼 -->
+            <div class="mode-toggle">
+                <button class="mode-btn active" onclick="switchMode('auto')">
+                    🤖 자동 분석
+                </button>
+                <button class="mode-btn" onclick="switchMode('manual')">
+                    ✍️ 수동 입력
+                </button>
+            </div>
+
+            <!-- 자동 분석 모드 -->
+            <div class="auto-mode active">
+                <div class="auto-analysis-section">
+                    <div class="auto-analysis-title">URL 자동 분석</div>
+                    
+                    <div class="url-input-group">
+                        <input 
+                            type="text" 
+                            class="url-input" 
+                            id="urlInput" 
+                            placeholder="기업 웹사이트 URL을 입력하세요 (예: https://example.com)"
+                        >
+                        <button class="analyze-btn" id="analyzeBtn" onclick="analyzeURL()">
+                            분석 시작
+                        </button>
+                    </div>
+
+                    <div class="analysis-status" id="analysisStatus"></div>
+
+                    <div class="analysis-info" id="analysisInfo">
+                        <div class="analysis-info-item">
+                            <span class="analysis-info-label">분석된 URL</span>
+                            <span class="analysis-info-value" id="analyzedUrl">-</span>
+                        </div>
+                        <div class="analysis-info-item">
+                            <span class="analysis-info-label">기업명</span>
+                            <span class="analysis-info-value" id="companyName">-</span>
+                        </div>
+                        <div class="analysis-info-item">
+                            <span class="analysis-info-label">자동 선택된 항목</span>
+                            <span class="analysis-info-value" id="selectedCount">0개</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 수동 입력 모드 -->
+            <div class="manual-mode">
+                <div id="categories"></div>
+            </div>
+
+            <div class="results-section">
+                <div class="result-item">
+                    <span class="result-label">총 점수</span>
+                    <span class="result-value total-score" id="totalScore">0</span>
+                </div>
+            </div>
+
+            <div class="collateral-section">
+                <div class="collateral-title">담보 산출</div>
+                
+                <div class="collateral-input">
+                    <div class="input-group">
+                        <label class="input-label">승인한도 (원)</label>
+                        <input type="number" class="input-field" id="approvalLimit" placeholder="예: 100000000" value="100000000">
+                    </div>
+                </div>
+
+                <div class="collateral-result">
+                    <div class="collateral-result-label">담보 설정액</div>
+                    <div class="collateral-result-value" id="collateralAmount">0원</div>
+                    <div class="collateral-result-label" style="margin-top: 10px; font-size: 12px;">
+                        (담보 비율: <span id="collateralRatio">0%</span>)
+                    </div>
+                </div>
+
+                <div class="collateral-table-wrapper">
+                    <table class="collateral-table">
+                        <thead>
+                            <tr>
+                                <th>총 점수 구간</th>
+                                <th>담보 비율</th>
+                            </tr>
+                        </thead>
+                        <tbody id="collateralTableBody">
+                        </tbody>
+                    </table>
+                </div>
+
+                <button class="reset-btn" onclick="resetForm()">초기화</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const data = {
+            "categories": [
+                {
+                    "weight": 1,
+                    "name": "자본금",
+                    "ranges": [
+                        {"range": "1억 미만", "score": 0},
+                        {"range": "1억 이상~10억 미만", "score": 2},
+                        {"range": "10억 이상~100억 미만", "score": 3},
+                        {"range": "100억 이상~1000억 미만", "score": 4},
+                        {"range": "1000억 이상", "score": 5}
+                    ]
+                },
+                {
+                    "weight": 2,
+                    "name": "매출액",
+                    "ranges": [
+                        {"range": "1억 미만", "score": 0},
+                        {"range": "1억 이상~10억 미만", "score": 2},
+                        {"range": "10억 이상~100억 미만", "score": 3},
+                        {"range": "100억 이상~1000억 미만", "score": 4},
+                        {"range": "1000억 이상", "score": 5}
+                    ]
+                },
+                {
+                    "weight": 2,
+                    "name": "기업등급",
+                    "ranges": [
+                        {"range": "d", "score": -30},
+                        {"range": "c~cc", "score": -3},
+                        {"range": "ccc / 확인불가", "score": -1},
+                        {"range": "b~bb", "score": 0},
+                        {"range": "bbb", "score": 2},
+                        {"range": "a 이상", "score": 5}
+                    ]
+                },
+                {
+                    "weight": 1,
+                    "name": "대표자 국적 (국가위험 점수)",
+                    "ranges": [
+                        {"range": "80~100", "score": -5},
+                        {"range": "70~80", "score": -4},
+                        {"range": "61~70", "score": -3},
+                        {"range": "51~60", "score": -2},
+                        {"range": "41~50", "score": -1},
+                        {"range": "0~40 (대한민국 포함)", "score": 0}
+                    ]
+                },
+                {
+                    "weight": 1,
+                    "name": "대표자 나이",
+                    "ranges": [
+                        {"range": "미성년자", "score": -10},
+                        {"range": "65세 이상", "score": -1},
+                        {"range": "19세 이상 ~ 65세 미만", "score": 0}
+                    ]
+                },
+                {
+                    "weight": 2,
+                    "name": "사업년수",
+                    "ranges": [
+                        {"range": "1년 미만", "score": 0},
+                        {"range": "1년 이상~5년 미만", "score": 1},
+                        {"range": "5년 이상~10년 미만", "score": 2},
+                        {"range": "10년 이상", "score": 3}
+                    ]
+                },
+                {
+                    "weight": 6,
+                    "name": "배송주기",
+                    "ranges": [
+                        {"range": "30일 이상", "score": -30},
+                        {"range": "15일 이상~30일 미만", "score": -5},
+                        {"range": "7일 이상~15일 미만 / 전자책", "score": -2},
+                        {"range": "3일 이상~7일 미만", "score": 1},
+                        {"range": "1일 이상~3일 미만", "score": 5},
+                        {"range": "배송주기 없음 / 후결제", "score": 30}
+                    ]
+                },
+                {
+                    "weight": 2,
+                    "name": "객단가",
+                    "ranges": [
+                        {"range": "500만원 이상", "score": -10},
+                        {"range": "300만원 이상~500만원 미만", "score": -5},
+                        {"range": "100만원 이상~300만원 미만", "score": -3},
+                        {"range": "50만원 이상~100만원 미만", "score": 0},
+                        {"range": "50만원 미만", "score": 3}
+                    ]
+                },
+                {
+                    "weight": 2,
+                    "name": "상품",
+                    "ranges": [
+                        {"range": "비실물상품(디지털 상품, 전자책 등)", "score": -3},
+                        {"range": "예약상품(숙박, 교육 등)", "score": -1},
+                        {"range": "중고 및 병행수입 실물상품", "score": 0},
+                        {"range": "실물상품", "score": 5}
+                    ]
+                }
+            ],
+            "collateral_table": [
+                {"score_min": -300, "ratio": 1.0},
+                {"score_min": 0, "ratio": 0.6},
+                {"score_min": 30, "ratio": 0.5},
+                {"score_min": 50, "ratio": 0.4},
+                {"score_min": 70, "ratio": 0.3},
+                {"score_min": 90, "ratio": 0.1},
+                {"score_min": 100, "ratio": 0}
+            ]
+        };
+
+        let selectedValues = {};
+        let currentMode = 'auto';
+
+        function switchMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            if (mode === 'auto') {
+                document.querySelector('.auto-mode').classList.add('active');
+                document.querySelector('.manual-mode').classList.remove('active');
+            } else {
+                document.querySelector('.auto-mode').classList.remove('active');
+                document.querySelector('.manual-mode').classList.add('active');
+            }
+        }
+
+        async function analyzeURL() {
+            const urlInput = document.getElementById('urlInput');
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                showStatus('error', 'URL을 입력해주세요.');
+                return;
+            }
+
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                showStatus('error', '올바른 URL 형식이 아닙니다. http:// 또는 https://로 시작해야 합니다.');
+                return;
+            }
+
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            analyzeBtn.disabled = true;
+            analyzeBtn.innerHTML = '<span class="spinner"></span>분석 중...';
+            
+            showStatus('loading', 'URL을 분석하고 있습니다. 잠시만 기다려주세요...');
+            
+            try {
+                // 실제로는 백엔드 API를 호출하여 분석
+                // 여기서는 시뮬레이션을 위해 랜덤 값 생성
+                await simulateAnalysis(url);
+                
+                showStatus('success', '분석이 완료되었습니다! 아래에서 결과를 확인하세요.');
+                document.getElementById('analysisInfo').classList.add('show');
+                
+            } catch (error) {
+                showStatus('error', '분석 중 오류가 발생했습니다: ' + error.message);
+            } finally {
+                analyzeBtn.disabled = false;
+                analyzeBtn.textContent = '분석 시작';
+            }
+        }
+
+        async function simulateAnalysis(url) {
+            // 시뮬레이션: 2초 대기
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // URL에서 도메인 추출
+            const domain = new URL(url).hostname;
+            
+            // 분석 정보 표시
+            document.getElementById('analyzedUrl').textContent = domain;
+            document.getElementById('companyName').textContent = domain.split('.')[0] + ' 주식회사';
+            
+            // 자동으로 값 선택 (시뮬레이션)
+            const autoSelections = {
+                0: Math.floor(Math.random() * 5), // 자본금
+                1: Math.floor(Math.random() * 5), // 매출액
+                2: Math.floor(Math.random() * 6), // 기업등급
+                3: 5, // 대표자 국적 (대한민국)
+                4: 2, // 대표자 나이 (19세~65세)
+                5: Math.floor(Math.random() * 4), // 사업년수
+                6: Math.floor(Math.random() * 6), // 배송주기
+                7: Math.floor(Math.random() * 5), // 객단가
+                8: Math.floor(Math.random() * 4)  // 상품
+            };
+            
+            let selectedCount = 0;
+            Object.entries(autoSelections).forEach(([catIndex, rangeIndex]) => {
+                const radioId = `range-${catIndex}-${rangeIndex}`;
+                const radio = document.getElementById(radioId);
+                if (radio) {
+                    radio.checked = true;
+                    updateSelection(parseInt(catIndex));
+                    selectedCount++;
+                }
+            });
+            
+            document.getElementById('selectedCount').textContent = selectedCount + '개';
+            
+            // 자동으로 수동 모드로 전환하여 결과 표시
+            setTimeout(() => {
+                document.querySelector('.manual-mode').style.display = 'block';
+            }, 500);
+        }
+
+        function showStatus(type, message) {
+            const statusDiv = document.getElementById('analysisStatus');
+            statusDiv.className = 'analysis-status ' + type;
+            statusDiv.textContent = message;
+        }
+
+        function initializeForm() {
+            const categoriesDiv = document.getElementById('categories');
+            categoriesDiv.innerHTML = '';
+
+            data.categories.forEach((category, catIndex) => {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'category';
+                
+                categoryDiv.innerHTML = `
+                    <div class="category-header">
+                        <span class="category-title">${category.name}</span>
+                        <span class="weight-badge">가중치 ${category.weight}</span>
+                    </div>
+                    <div class="category-body">
+                        <div class="range-options" id="category-${catIndex}">
+                        </div>
+                    </div>
+                `;
+                
+                categoriesDiv.appendChild(categoryDiv);
+                
+                const rangeOptionsDiv = document.getElementById(`category-${catIndex}`);
+                category.ranges.forEach((range, rangeIndex) => {
+                    const rangeDiv = document.createElement('div');
+                    rangeDiv.className = 'range-option';
+                    rangeDiv.innerHTML = `
+                        <input type="radio" name="category-${catIndex}" id="range-${catIndex}-${rangeIndex}" value="${rangeIndex}">
+                        <label class="range-text" for="range-${catIndex}-${rangeIndex}">${range.range}</label>
+                        <span class="range-score">${range.score > 0 ? '+' : ''}${range.score}점</span>
+                    `;
+                    
+                    rangeDiv.addEventListener('click', function() {
+                        document.getElementById(`range-${catIndex}-${rangeIndex}`).checked = true;
+                        updateSelection(catIndex);
+                    });
+                    
+                    rangeOptionsDiv.appendChild(rangeDiv);
+                });
+            });
+
+            // 담보 테이블 생성
+            const tableBody = document.getElementById('collateralTableBody');
+            tableBody.innerHTML = '';
+            data.collateral_table.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.score_min}</td>
+                    <td>${(row.ratio * 100).toFixed(0)}%</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+
+            // 승인한도 입력 이벤트
+            document.getElementById('approvalLimit').addEventListener('input', calculateCollateral);
+        }
+
+        function updateSelection(catIndex) {
+            const selected = document.querySelector(`input[name="category-${catIndex}"]:checked`);
+            if (selected) {
+                const rangeIndex = parseInt(selected.value);
+                selectedValues[catIndex] = {
+                    score: data.categories[catIndex].ranges[rangeIndex].score,
+                    weight: data.categories[catIndex].weight
+                };
+            }
+            
+            // 선택된 항목 하이라이트
+            document.querySelectorAll(`#category-${catIndex} .range-option`).forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            if (selected) {
+                selected.closest('.range-option').classList.add('selected');
+            }
+            
+            calculateTotal();
+        }
+
+        function calculateTotal() {
+            let total = 0;
+            Object.values(selectedValues).forEach(item => {
+                total += item.score * item.weight;
+            });
+            
+            document.getElementById('totalScore').textContent = total;
+            calculateCollateral();
+        }
+
+        function calculateCollateral() {
+            const totalScore = parseInt(document.getElementById('totalScore').textContent);
+            const approvalLimit = parseInt(document.getElementById('approvalLimit').value) || 0;
+            
+            let ratio = 0;
+            for (let i = data.collateral_table.length - 1; i >= 0; i--) {
+                if (totalScore >= data.collateral_table[i].score_min) {
+                    ratio = data.collateral_table[i].ratio;
+                    break;
+                }
+            }
+            
+            const collateralAmount = Math.round(approvalLimit * ratio);
+            
+            document.getElementById('collateralAmount').textContent = 
+                collateralAmount.toLocaleString('ko-KR') + '원';
+            document.getElementById('collateralRatio').textContent = 
+                (ratio * 100).toFixed(0) + '%';
+            
+            // 테이블에서 해당 행 하이라이트
+            const rows = document.querySelectorAll('#collateralTableBody tr');
+            rows.forEach((row, index) => {
+                row.classList.remove('active');
+                if (totalScore >= data.collateral_table[index].score_min) {
+                    const nextIndex = index + 1;
+                    if (nextIndex >= data.collateral_table.length || 
+                        totalScore < data.collateral_table[nextIndex].score_min) {
+                        row.classList.add('active');
+                    }
+                }
+            });
+        }
+
+        function resetForm() {
+            selectedValues = {};
+            document.querySelectorAll('input[type="radio"]').forEach(radio => {
+                radio.checked = false;
+            });
+            document.querySelectorAll('.range-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            document.getElementById('totalScore').textContent = '0';
+            document.getElementById('approvalLimit').value = '100000000';
+            document.getElementById('urlInput').value = '';
+            document.getElementById('analysisStatus').className = 'analysis-status';
+            document.getElementById('analysisInfo').classList.remove('show');
+            calculateCollateral();
+        }
+
+        // 초기화
+        initializeForm();
+    </script>
+</body>
+</html>
